@@ -17,8 +17,6 @@ import {
   query,
   orderBy,
   onSnapshot,
-  where,
-  getDocs,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -126,7 +124,7 @@ function loadItems() {
   });
 }
 
-// -------------------- 🔥 1:1 채팅 --------------------
+// -------------------- 🔥 1:1 채팅 (완전 수정됨) --------------------
 window.startChat = async (itemId, sellerId) => {
   const buyerId = auth.currentUser.uid;
 
@@ -135,26 +133,11 @@ window.startChat = async (itemId, sellerId) => {
     return;
   }
 
-  const q = query(
-    collection(db, "chatRooms"),
-    where("itemId", "==", itemId),
-    where("sellerId", "==", sellerId),
-    where("buyerId", "==", buyerId)
-  );
+  // 🔥 항상 동일한 채팅방 ID 생성 (핵심 해결)
+  const ids = [buyerId, sellerId].sort();
+  currentRoomId = itemId + "_" + ids[0] + "_" + ids[1];
 
-  const snap = await getDocs(q);
-
-  if (!snap.empty) {
-    currentRoomId = snap.docs[0].id;
-  } else {
-    const room = await addDoc(collection(db, "chatRooms"), {
-      itemId,
-      sellerId,
-      buyerId,
-      createdAt: serverTimestamp()
-    });
-    currentRoomId = room.id;
-  }
+  console.log("채팅방:", currentRoomId);
 
   loadMessages(currentRoomId);
 };
