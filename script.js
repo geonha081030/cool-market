@@ -1,3 +1,6 @@
+// 🔥 이거 뜨면 script.js 정상 실행
+alert("스크립트 실행됨");
+
 // -------------------- Firebase SDK --------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 
@@ -146,18 +149,16 @@ function loadItems() {
   });
 }
 
-// -------------------- 🔥 채팅 (roomId 확인 포함) --------------------
+// -------------------- 🔥 채팅 + roomId 확인 --------------------
 window.startChat = (itemId, sellerId) => {
   const myId = auth.currentUser.uid;
 
-  // 🔥 무조건 동일한 roomId 생성
   const ids = [myId, sellerId].sort();
   const roomId = itemId + "_" + ids[0] + "_" + ids[1];
 
-  // 🔥 여기서 화면에 뜸 (아이패드에서도 보임)
+  // 🔥 이거 떠야 정상
   alert("roomId: " + roomId);
 
-  // 채팅 페이지 이동
   window.location.href = `chat.html?roomId=${roomId}`;
 };
 
