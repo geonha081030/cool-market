@@ -148,14 +148,20 @@ function loadItems() {
   });
 }
 
-// -------------------- 🔥 채팅 시작 (본인도 가능) --------------------
+// -------------------- 🔥 채팅 시작 (완전 해결) --------------------
 window.startChat = async (itemId, sellerId) => {
-  const buyerId = auth.currentUser.uid;
+  const myId = auth.currentUser.uid;
 
-  // 🔥 본인도 채팅 가능 (차단 코드 제거됨)
+  if (myId === sellerId) {
+    // 🔥 본인 채팅
+    currentRoomId = itemId + "_self_" + myId;
+  } else {
+    // 🔥 서로 같은 방
+    const ids = [myId, sellerId].sort();
+    currentRoomId = itemId + "_" + ids[0] + "_" + ids[1];
+  }
 
-  const ids = [buyerId, sellerId].sort();
-  currentRoomId = itemId + "_" + ids[0] + "_" + ids[1];
+  console.log("채팅방:", currentRoomId);
 
   loadMessages(currentRoomId);
 };
