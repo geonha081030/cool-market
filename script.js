@@ -1,7 +1,7 @@
 // -------------------- Firebase SDK --------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
 // -------------------- Firebase 초기화 --------------------
@@ -20,12 +20,16 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 // -------------------- 로그인 상태 --------------------
+let currentChatItemId = null;
+let currentSellerId = null;
+let currentBuyerId = null;
+
 onAuthStateChanged(auth, (user) => {
   if (user && user.emailVerified) {
     document.getElementById("auth").style.display = "none";
     document.getElementById("app").style.display = "block";
     loadItems();
-    loadMessages();
+    if (currentChatItemId) loadChatMessages(currentChatItemId, currentSellerId, currentBuyerId);
   } else {
     document.getElementById("auth").style.display = "block";
     document.getElementById("app").style.display = "none";
@@ -102,33 +106,52 @@ function loadItems() {
     itemsDiv.innerHTML = "";
     snapshot.forEach(docSnap => {
       const d = docSnap.data();
-      itemsDiv.innerHTML += `<div><img src="${d.imageUrl}" width="100"><br>${d.title} - ${d.price}원</div>`;
+      const itemId = docSnap.id;
+      itemsDiv.innerHTML += `
+        <div>
+          <img src="${d.imageUrl}" width="100"><br>
+          ${d.title} - ${d.price}원
+          <button onclick="startChat('${itemId}', '${d.sellerId}', '${auth.currentUser.uid}')">채팅 시작</button>
+        </div>
+      `;
     });
   });
 }
 
-// -------------------- 채팅 기능 --------------------
-const messagesRef = collection(db, "messages");
+// -------------------- 1:1 채팅 --------------------
+window.startChat = (itemId, sellerId, buyerId) => {
+  currentChatItemId = itemId;
+  currentSellerId = sellerId;
+  currentBuyerId = buyerId;
+  loadChatMessages(itemId, sellerId, buyerId);
+};
 
-window.sendMessage = async () => {
+window.sendChatMessage = async () => {
   const text = document.getElementById("messageInput").value;
-  if (!text) return;
-  await addDoc(messagesRef, {
-    senderId: auth.currentUser.uid,
+  if (!text || !currentChatItemId) return;
+  const userId = auth.currentUser.uid;
+
+  // 1:1 권한 확인
+  if (userId !== currentSellerId && userId !== currentBuyerId) return alert("권한이 없습니다.");
+
+  await addDoc(collection(db, `items/${currentChatItemId}/messages`), {
+    senderId: userId,
     text,
     createdAt: new Date()
   });
   document.getElementById("messageInput").value = "";
 };
 
-function loadMessages() {
+function loadChatMessages(itemId, sellerId, buyerId) {
+  const messagesRef = collection(db, `items/${itemId}/messages`);
   const q = query(messagesRef, orderBy("createdAt"));
   onSnapshot(q, snapshot => {
     const chatDiv = document.getElementById("chat");
     chatDiv.innerHTML = "";
     snapshot.forEach(docSnap => {
       const m = docSnap.data();
-      chatDiv.innerHTML += `<div>${m.senderId}: ${m.text}</div>`;
+      const senderLabel = m.senderId === auth.currentUser.uid ? "나" : "상대";
+      chatDiv.innerHTML += `<div>${senderLabel}: ${m.text}</div>`;
     });
     chatDiv.scrollTop = chatDiv.scrollHeight;
   });
