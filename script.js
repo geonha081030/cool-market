@@ -17,9 +17,11 @@ import {
   query,
   orderBy,
   onSnapshot,
-  serverTimestamp,
+  where,
+  getDocs,
   doc,
-  updateDoc
+  updateDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 import {
@@ -45,6 +47,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+let currentRoomId = null;
+
 // -------------------- 로그인 상태 --------------------
 onAuthStateChanged(auth, (user) => {
   const authDiv = document.getElementById("auth");
@@ -54,9 +58,17 @@ onAuthStateChanged(auth, (user) => {
     if (authDiv) authDiv.style.display = "none";
     if (appDiv) appDiv.style.display = "block";
 
-    // 🔥 list.html에서만 실행
+    // list.html에서 상품 목록 로딩
     if (document.getElementById("items")) {
       loadItems();
+    }
+
+    // chat.html에서 메시지 로딩
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get("roomId");
+    if (roomId && document.getElementById("chat")) {
+      currentRoomId = roomId;
+      loadMessages(currentRoomId);
     }
 
   } else {
@@ -70,6 +82,8 @@ window.signUp = async () => {
   const email = val("email");
   const password = val("password");
 
+  if (!email || !password) return alert("이메일과 비밀번호 입력");
+
   const user = await createUserWithEmailAndPassword(auth, email, password);
   await sendEmailVerification(user.user);
 
@@ -78,7 +92,11 @@ window.signUp = async () => {
 
 // -------------------- 로그인 --------------------
 window.login = async () => {
-  await signInWithEmailAndPassword(auth, val("email"), val("password"));
+  const email = val("email");
+  const password = val("password");
+  if (!email || !password) return alert("이메일과 비밀번호 입력");
+
+  await signInWithEmailAndPassword(auth, email, password);
 };
 
 // -------------------- 로그아웃 --------------------
@@ -114,9 +132,7 @@ window.addItemWithImage = async () => {
 // -------------------- 거래 완료 --------------------
 window.completeTrade = async (itemId) => {
   const itemRef = doc(db, "items", itemId);
-  await updateDoc(itemRef, {
-    status: "판매완료"
-  });
+  await updateDoc(itemRef, { status: "판매완료" });
 };
 
 // -------------------- 상품 목록 --------------------
@@ -157,28 +173,59 @@ function loadItems() {
   });
 }
 
-// -------------------- 채팅 이동 --------------------
-window.startChat = (itemId, sellerId) => {
-  const myId = auth.currentUser.uid;
+// -------------------- 🔥 1:1 채팅 --------------------
+window.startChat = async (itemId, sellerId) => {
+  const buyerId = auth.currentUser.uid;
 
-  const ids = [myId, sellerId].sort();
+  // roomId 생성 (상품ID + 두 UID 정렬)
+  const ids = [buyerId, sellerId].sort();
   const roomId = itemId + "_" + ids[0] + "_" + ids[1];
 
+  // chat.html로 이동
   window.location.href = `chat.html?roomId=${roomId}`;
 };
 
+// -------------------- 메시지 보내기 --------------------
+window.sendChatMessage = async () => {
+  const text = val("messageInput");
+  if (!text || !currentRoomId) return;
+
+  await addDoc(collection(db, `chatRooms/${currentRoomId}/messages`), {
+    senderId: auth.currentUser.uid,
+    text,
+    createdAt: serverTimestamp()
+  });
+
+  clear("messageInput");
+};
+
+// -------------------- 메시지 로딩 --------------------
+function loadMessages(roomId) {
+  const q = query(
+    collection(db, `chatRooms/${roomId}/messages`),
+    orderBy("createdAt")
+  );
+
+  onSnapshot(q, (snapshot) => {
+    const div = document.getElementById("chat");
+    if (!div) return;
+
+    div.innerHTML = "";
+
+    snapshot.forEach(docSnap => {
+      const m = docSnap.data();
+      const me = m.senderId === auth.currentUser.uid;
+      div.innerHTML += `<div>${me ? "나" : "상대"}: ${m.text}</div>`;
+    });
+
+    div.scrollTop = div.scrollHeight;
+  });
+}
+
 // -------------------- 페이지 이동 --------------------
-window.goToList = () => {
-  window.location.href = "list.html";
-};
-
-window.goToAdd = () => {
-  window.location.href = "add.html";
-};
-
-window.goBack = () => {
-  window.location.href = "index.html";
-};
+window.goToList = () => window.location.href = "list.html";
+window.goToAdd = () => window.location.href = "add.html";
+window.goBack = () => window.location.href = "index.html";
 
 // -------------------- 유틸 --------------------
 function val(id) {
