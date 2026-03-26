@@ -1,8 +1,31 @@
 // -------------------- Firebase SDK --------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  sendEmailVerification
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
 // -------------------- Firebase 초기화 --------------------
 const firebaseConfig = {
@@ -19,17 +42,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// -------------------- 로그인 상태 --------------------
-let currentChatItemId = null;
-let currentSellerId = null;
-let currentBuyerId = null;
+// -------------------- 상태 --------------------
+let currentRoomId = null;
 
+// -------------------- 로그인 상태 --------------------
 onAuthStateChanged(auth, (user) => {
   if (user && user.emailVerified) {
     document.getElementById("auth").style.display = "none";
     document.getElementById("app").style.display = "block";
     loadItems();
-    if (currentChatItemId) loadChatMessages(currentChatItemId, currentSellerId, currentBuyerId);
   } else {
     document.getElementById("auth").style.display = "block";
     document.getElementById("app").style.display = "none";
@@ -38,30 +59,20 @@ onAuthStateChanged(auth, (user) => {
 
 // -------------------- 회원가입 --------------------
 window.signUp = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  if (!email || !password) return alert("이메일과 비밀번호를 입력해주세요");
+  const email = emailInput();
+  const password = passwordInput();
 
-  try {
-    const userCred = await createUserWithEmailAndPassword(auth, email, password);
-    await sendEmailVerification(userCred.user);
-    alert("회원가입 완료! 이메일 인증 후 로그인해주세요.");
-  } catch (err) {
-    alert("회원가입 실패: " + err.message);
-  }
+  if (!email || !password) return alert("입력해주세요");
+
+  const user = await createUserWithEmailAndPassword(auth, email, password);
+  await sendEmailVerification(user.user);
+
+  alert("이메일 인증 후 로그인");
 };
 
 // -------------------- 로그인 --------------------
 window.login = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  if (!email || !password) return alert("이메일과 비밀번호를 입력해주세요");
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-  } catch (err) {
-    alert("로그인 실패: " + err.message);
-  }
+  await signInWithEmailAndPassword(auth, emailInput(), passwordInput());
 };
 
 // -------------------- 로그아웃 --------------------
@@ -69,89 +80,133 @@ window.logout = async () => {
   await signOut(auth);
 };
 
-// -------------------- 상품 등록 (이미지 포함) --------------------
+// -------------------- 상품 등록 --------------------
 window.addItemWithImage = async () => {
-  const title = document.getElementById("title").value;
-  const price = document.getElementById("price").value;
+  const title = val("title");
+  const price = val("price");
   const file = document.getElementById("image").files[0];
 
-  if (!title || !price || !file) return alert("제목, 가격, 이미지를 모두 입력해주세요");
+  if (!title || !price || !file) return alert("모두 입력");
 
-  try {
-    const fileRef = ref(storage, `items/${Date.now()}_${file.name}`);
-    await uploadBytes(fileRef, file);
-    const imageUrl = await getDownloadURL(fileRef);
+  const fileRef = ref(storage, `items/${Date.now()}_${file.name}`);
+  await uploadBytes(fileRef, file);
+  const imageUrl = await getDownloadURL(fileRef);
 
-    await addDoc(collection(db, "items"), {
-      title,
-      price,
-      imageUrl,
-      sellerId: auth.currentUser.uid,
-      createdAt: new Date()
-    });
+  await addDoc(collection(db, "items"), {
+    title,
+    price,
+    imageUrl,
+    sellerId: auth.currentUser.uid,
+    createdAt: new Date()
+  });
 
-    document.getElementById("title").value = "";
-    document.getElementById("price").value = "";
-    document.getElementById("image").value = "";
-  } catch (err) {
-    alert("상품 등록 실패: " + err.message);
-  }
+  clear("title", "price", "image");
 };
 
 // -------------------- 상품 목록 --------------------
 function loadItems() {
   const q = query(collection(db, "items"), orderBy("createdAt", "desc"));
+
   onSnapshot(q, (snapshot) => {
-    const itemsDiv = document.getElementById("items");
-    itemsDiv.innerHTML = "";
+    const div = document.getElementById("items");
+    div.innerHTML = "";
+
     snapshot.forEach(docSnap => {
       const d = docSnap.data();
-      const itemId = docSnap.id;
-      itemsDiv.innerHTML += `
+      const id = docSnap.id;
+
+      div.innerHTML += `
         <div>
-          <img src="${d.imageUrl}" width="100"><br>
-          ${d.title} - ${d.price}원
-          <button onclick="startChat('${itemId}', '${d.sellerId}', '${auth.currentUser.uid}')">채팅 시작</button>
+          <img src="${d.imageUrl}" width="100">
+          <div>${d.title} - ${d.price}원</div>
+          <button onclick="startChat('${id}', '${d.sellerId}')">채팅</button>
         </div>
       `;
     });
   });
 }
 
-// -------------------- 1:1 채팅 --------------------
-window.startChat = (itemId, sellerId, buyerId) => {
-  currentChatItemId = itemId;
-  currentSellerId = sellerId;
-  currentBuyerId = buyerId;
-  loadChatMessages(itemId, sellerId, buyerId);
+// -------------------- 1:1 채팅 시작 --------------------
+window.startChat = async (itemId, sellerId) => {
+  const buyerId = auth.currentUser.uid;
+
+  if (buyerId === sellerId) {
+    alert("본인 상품");
+    return;
+  }
+
+  const q = query(
+    collection(db, "chatRooms"),
+    where("itemId", "==", itemId),
+    where("buyerId", "==", buyerId),
+    where("sellerId", "==", sellerId)
+  );
+
+  const snap = await getDocs(q);
+
+  if (!snap.empty) {
+    currentRoomId = snap.docs[0].id;
+  } else {
+    const room = await addDoc(collection(db, "chatRooms"), {
+      itemId,
+      sellerId,
+      buyerId,
+      createdAt: new Date()
+    });
+    currentRoomId = room.id;
+  }
+
+  loadMessages(currentRoomId);
 };
 
+// -------------------- 메시지 보내기 --------------------
 window.sendChatMessage = async () => {
-  const text = document.getElementById("messageInput").value;
-  if (!text || !currentChatItemId) return;
-  const userId = auth.currentUser.uid;
+  const text = val("messageInput");
+  if (!text || !currentRoomId) return;
 
-  if (userId !== currentSellerId && userId !== currentBuyerId) return alert("권한이 없습니다.");
-
-  await addDoc(collection(db, `items/${currentChatItemId}/messages`), {
-    senderId: userId,
+  await addDoc(collection(db, `chatRooms/${currentRoomId}/messages`), {
+    senderId: auth.currentUser.uid,
     text,
     createdAt: new Date()
   });
-  document.getElementById("messageInput").value = "";
+
+  clear("messageInput");
 };
 
-function loadChatMessages(itemId, sellerId, buyerId) {
-  const messagesRef = collection(db, `items/${itemId}/messages`);
-  const q = query(messagesRef, orderBy("createdAt"));
-  onSnapshot(q, snapshot => {
-    const chatDiv = document.getElementById("chat");
-    chatDiv.innerHTML = "";
+// -------------------- 메시지 불러오기 --------------------
+function loadMessages(roomId) {
+  const q = query(
+    collection(db, `chatRooms/${roomId}/messages`),
+    orderBy("createdAt")
+  );
+
+  onSnapshot(q, (snapshot) => {
+    const div = document.getElementById("chat");
+    div.innerHTML = "";
+
     snapshot.forEach(docSnap => {
       const m = docSnap.data();
-      const senderLabel = m.senderId === auth.currentUser.uid ? "나" : "상대";
-      chatDiv.innerHTML += `<div>${senderLabel}: ${m.text}</div>`;
+      const me = m.senderId === auth.currentUser.uid;
+      div.innerHTML += `<div>${me ? "나" : "상대"}: ${m.text}</div>`;
     });
-    chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    div.scrollTop = div.scrollHeight;
   });
+}
+
+// -------------------- 유틸 --------------------
+function val(id) {
+  return document.getElementById(id).value;
+}
+
+function clear(...ids) {
+  ids.forEach(id => document.getElementById(id).value = "");
+}
+
+function emailInput() {
+  return val("email");
+}
+
+function passwordInput() {
+  return val("password");
 }
