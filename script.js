@@ -148,14 +148,11 @@ function loadItems() {
   });
 }
 
-// -------------------- 채팅 시작 --------------------
+// -------------------- 🔥 채팅 시작 (본인도 가능) --------------------
 window.startChat = async (itemId, sellerId) => {
   const buyerId = auth.currentUser.uid;
 
-  if (buyerId === sellerId) {
-    alert("본인 상품");
-    return;
-  }
+  // 🔥 본인도 채팅 가능 (차단 코드 제거됨)
 
   const ids = [buyerId, sellerId].sort();
   currentRoomId = itemId + "_" + ids[0] + "_" + ids[1];
@@ -177,7 +174,7 @@ window.sendChatMessage = async () => {
   clear("messageInput");
 };
 
-// -------------------- 메시지 로딩 (🔥 나/상대 표시 포함) --------------------
+// -------------------- 메시지 로딩 --------------------
 function loadMessages(roomId) {
   const q = query(
     collection(db, `chatRooms/${roomId}/messages`),
@@ -190,7 +187,6 @@ function loadMessages(roomId) {
 
     snapshot.forEach(docSnap => {
       const m = docSnap.data();
-
       const isMe = m.senderId === auth.currentUser.uid;
 
       div.innerHTML += `
