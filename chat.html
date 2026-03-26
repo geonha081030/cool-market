@@ -8,14 +8,18 @@
 
 <h2>채팅</h2>
 
-<button onclick="goBack()">← 뒤로가기</button>
-
-<div id="chat" style="height:300px; overflow:auto; border:1px solid #ccc; margin-top:10px;"></div>
+<button onclick="goBack()">← 메뉴로</button>
+<div id="chat" style="height:400px; overflow:auto; border:1px solid #ccc; padding:5px;"></div>
 
 <input id="messageInput" placeholder="메시지 입력">
-<button onclick="sendChatMessage()">전송</button>
+<button id="sendBtn">보내기</button>
 
-<script type="module" src="chat.js"></script>
+<script type="module" src="script.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("sendBtn").addEventListener("click", sendChatMessage);
+});
+</script>
 
 </body>
 </html>
