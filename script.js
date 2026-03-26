@@ -97,7 +97,7 @@ window.addItemWithImage = async () => {
     price,
     imageUrl,
     sellerId: auth.currentUser.uid,
-    status: "판매중", // 🔥 추가
+    status: "판매중",
     createdAt: serverTimestamp()
   });
 
@@ -148,7 +148,7 @@ function loadItems() {
   });
 }
 
-// -------------------- 채팅 --------------------
+// -------------------- 채팅 시작 --------------------
 window.startChat = async (itemId, sellerId) => {
   const buyerId = auth.currentUser.uid;
 
@@ -163,7 +163,7 @@ window.startChat = async (itemId, sellerId) => {
   loadMessages(currentRoomId);
 };
 
-// -------------------- 메시지 --------------------
+// -------------------- 메시지 보내기 --------------------
 window.sendChatMessage = async () => {
   const text = val("messageInput");
   if (!text || !currentRoomId) return;
@@ -177,7 +177,7 @@ window.sendChatMessage = async () => {
   clear("messageInput");
 };
 
-// -------------------- 메시지 로딩 --------------------
+// -------------------- 메시지 로딩 (🔥 나/상대 표시 포함) --------------------
 function loadMessages(roomId) {
   const q = query(
     collection(db, `chatRooms/${roomId}/messages`),
@@ -190,8 +190,14 @@ function loadMessages(roomId) {
 
     snapshot.forEach(docSnap => {
       const m = docSnap.data();
-      const me = m.senderId === auth.currentUser.uid;
-      div.innerHTML += `<div>${me ? "나" : "상대"}: ${m.text}</div>`;
+
+      const isMe = m.senderId === auth.currentUser.uid;
+
+      div.innerHTML += `
+        <div>
+          <b>${isMe ? "나" : "상대"}</b>: ${m.text}
+        </div>
+      `;
     });
 
     div.scrollTop = div.scrollHeight;
