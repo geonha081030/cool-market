@@ -8,12 +8,18 @@
 
 <h2>상품 목록</h2>
 
-<!-- 메뉴로 돌아가기 -->
-<button onclick="location.href='index.html'">← 메뉴로</button>
-
+<button id="backBtn">← 메뉴로</button>
 <div id="items"></div>
 
 <script type="module" src="script.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  });
+</script>
 
 </body>
 </html>
