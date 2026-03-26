@@ -146,16 +146,18 @@ function loadItems() {
   });
 }
 
-// -------------------- 🔥 채팅 (완전 동기화) --------------------
+// -------------------- 🔥 채팅 (roomId 확인 포함) --------------------
 window.startChat = (itemId, sellerId) => {
   const myId = auth.currentUser.uid;
 
-  // 🔥 무조건 동일한 roomId
+  // 🔥 무조건 동일한 roomId 생성
   const ids = [myId, sellerId].sort();
   const roomId = itemId + "_" + ids[0] + "_" + ids[1];
 
-  console.log("roomId:", roomId);
+  // 🔥 여기서 화면에 뜸 (아이패드에서도 보임)
+  alert("roomId: " + roomId);
 
+  // 채팅 페이지 이동
   window.location.href = `chat.html?roomId=${roomId}`;
 };
 
