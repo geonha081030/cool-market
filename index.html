@@ -16,34 +16,14 @@
   <button onclick="login()">로그인</button>
 </div>
 
-<!-- 앱 -->
+<!-- 메뉴 -->
 <div id="app" style="display:none;">
-
   <button onclick="logout()">로그아웃</button>
 
-  <hr>
+  <h3>메뉴</h3>
 
-  <!-- 탭 -->
-  <button onclick="showTab('list')">상품 목록</button>
-  <button onclick="showTab('add')">상품 등록</button>
-
-  <hr>
-
-  <!-- 상품 목록 -->
-  <div id="listTab">
-    <h3>상품 목록</h3>
-    <div id="items"></div>
-  </div>
-
-  <!-- 상품 등록 -->
-  <div id="addTab" style="display:none;">
-    <h3>상품 등록</h3>
-    <input id="title" placeholder="상품명"><br>
-    <input id="price" placeholder="가격"><br>
-    <input type="file" id="image"><br>
-    <button onclick="addItemWithImage()">등록</button>
-  </div>
-
+  <button onclick="goToList()">상품 목록</button><br><br>
+  <button onclick="goToAdd()">상품 등록</button>
 </div>
 
 <script type="module" src="script.js"></script>
