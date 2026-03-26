@@ -45,8 +45,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-let currentRoomId = null;
-
 // -------------------- 로그인 상태 --------------------
 onAuthStateChanged(auth, (user) => {
   if (user && user.emailVerified) {
@@ -148,63 +146,26 @@ function loadItems() {
   });
 }
 
-// -------------------- 🔥 채팅 시작 (완전 해결) --------------------
+// -------------------- 🔥 채팅 페이지 이동 --------------------
 window.startChat = async (itemId, sellerId) => {
   const myId = auth.currentUser.uid;
 
+  let roomId;
+
   if (myId === sellerId) {
-    // 🔥 본인 채팅
-    currentRoomId = itemId + "_self_" + myId;
+    // 본인 채팅
+    roomId = itemId + "_self_" + myId;
   } else {
-    // 🔥 서로 같은 방
+    // 1:1 채팅
     const ids = [myId, sellerId].sort();
-    currentRoomId = itemId + "_" + ids[0] + "_" + ids[1];
+    roomId = itemId + "_" + ids[0] + "_" + ids[1];
   }
 
-  console.log("채팅방:", currentRoomId);
+  console.log("이동할 채팅방:", roomId);
 
-  loadMessages(currentRoomId);
+  // 🔥 채팅 페이지로 이동
+  window.location.href = `chat.html?roomId=${roomId}`;
 };
-
-// -------------------- 메시지 보내기 --------------------
-window.sendChatMessage = async () => {
-  const text = val("messageInput");
-  if (!text || !currentRoomId) return;
-
-  await addDoc(collection(db, `chatRooms/${currentRoomId}/messages`), {
-    senderId: auth.currentUser.uid,
-    text,
-    createdAt: serverTimestamp()
-  });
-
-  clear("messageInput");
-};
-
-// -------------------- 메시지 로딩 --------------------
-function loadMessages(roomId) {
-  const q = query(
-    collection(db, `chatRooms/${roomId}/messages`),
-    orderBy("createdAt")
-  );
-
-  onSnapshot(q, (snapshot) => {
-    const div = document.getElementById("chat");
-    div.innerHTML = "";
-
-    snapshot.forEach(docSnap => {
-      const m = docSnap.data();
-      const isMe = m.senderId === auth.currentUser.uid;
-
-      div.innerHTML += `
-        <div>
-          <b>${isMe ? "나" : "상대"}</b>: ${m.text}
-        </div>
-      `;
-    });
-
-    div.scrollTop = div.scrollHeight;
-  });
-}
 
 // -------------------- 유틸 --------------------
 function val(id) {
