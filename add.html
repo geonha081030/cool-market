@@ -8,15 +8,25 @@
 
 <h2>상품 등록</h2>
 
-<button onclick="location.href='index.html'">← 메뉴로</button>
+<button id="backBtn">← 메뉴로</button><br><br>
 
 <input id="title" placeholder="상품명"><br>
 <input id="price" placeholder="가격"><br>
 <input type="file" id="image"><br>
 
-<button onclick="addItemWithImage()">등록</button>
+<button id="addItemBtn">등록</button>
 
 <script type="module" src="script.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+
+    document.getElementById("addItemBtn").addEventListener("click", addItemWithImage);
+  });
+</script>
 
 </body>
 </html>
