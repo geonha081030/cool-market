@@ -17,7 +17,9 @@ import {
   query,
   orderBy,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 import {
@@ -95,10 +97,19 @@ window.addItemWithImage = async () => {
     price,
     imageUrl,
     sellerId: auth.currentUser.uid,
+    status: "판매중", // 🔥 추가
     createdAt: serverTimestamp()
   });
 
   clear("title", "price", "image");
+};
+
+// -------------------- 거래 완료 --------------------
+window.completeTrade = async (itemId) => {
+  const itemRef = doc(db, "items", itemId);
+  await updateDoc(itemRef, {
+    status: "판매완료"
+  });
 };
 
 // -------------------- 상품 목록 --------------------
@@ -114,17 +125,30 @@ function loadItems() {
       const id = docSnap.id;
 
       div.innerHTML += `
-        <div>
+        <div style="border:1px solid #ccc; padding:10px; margin:10px;">
           <img src="${d.imageUrl}" width="100">
           <div>${d.title} - ${d.price}원</div>
-          <button onclick="startChat('${id}', '${d.sellerId}')">채팅</button>
+          <div>${d.status}</div>
+
+          ${
+            d.status === "판매완료"
+              ? `<button disabled>판매완료</button>`
+              : `
+                <button onclick="startChat('${id}', '${d.sellerId}')">채팅</button>
+                ${
+                  auth.currentUser.uid === d.sellerId
+                    ? `<button onclick="completeTrade('${id}')">거래 완료</button>`
+                    : ""
+                }
+              `
+          }
         </div>
       `;
     });
   });
 }
 
-// -------------------- 🔥 1:1 채팅 (완전 수정됨) --------------------
+// -------------------- 채팅 --------------------
 window.startChat = async (itemId, sellerId) => {
   const buyerId = auth.currentUser.uid;
 
@@ -133,16 +157,13 @@ window.startChat = async (itemId, sellerId) => {
     return;
   }
 
-  // 🔥 항상 동일한 채팅방 ID 생성 (핵심 해결)
   const ids = [buyerId, sellerId].sort();
   currentRoomId = itemId + "_" + ids[0] + "_" + ids[1];
-
-  console.log("채팅방:", currentRoomId);
 
   loadMessages(currentRoomId);
 };
 
-// -------------------- 메시지 보내기 --------------------
+// -------------------- 메시지 --------------------
 window.sendChatMessage = async () => {
   const text = val("messageInput");
   if (!text || !currentRoomId) return;
