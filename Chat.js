@@ -1,6 +1,6 @@
 // Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import {
   getFirestore,
   collection,
@@ -25,11 +25,22 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 🔥 URL에서 roomId 가져오기
+// URL에서 roomId 가져오기
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get("roomId");
 
-// 메시지 로딩
+// 로그인 확인 후 실행
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    alert("로그인 필요");
+    window.location.href = "index.html";
+    return;
+  }
+
+  loadMessages();
+});
+
+// 메시지 불러오기
 function loadMessages() {
   const q = query(
     collection(db, `chatRooms/${roomId}/messages`),
@@ -45,7 +56,9 @@ function loadMessages() {
       const isMe = m.senderId === auth.currentUser.uid;
 
       div.innerHTML += `
-        <div><b>${isMe ? "나" : "상대"}</b>: ${m.text}</div>
+        <div>
+          <b>${isMe ? "나" : "상대"}</b>: ${m.text}
+        </div>
       `;
     });
 
@@ -55,7 +68,9 @@ function loadMessages() {
 
 // 메시지 보내기
 window.sendChatMessage = async () => {
-  const text = document.getElementById("messageInput").value;
+  const input = document.getElementById("messageInput");
+  const text = input.value;
+
   if (!text) return;
 
   await addDoc(collection(db, `chatRooms/${roomId}/messages`), {
@@ -64,7 +79,10 @@ window.sendChatMessage = async () => {
     createdAt: serverTimestamp()
   });
 
-  document.getElementById("messageInput").value = "";
+  input.value = "";
 };
 
-loadMessages();
+// 뒤로가기
+window.goBack = () => {
+  window.location.href = "index.html";
+};
