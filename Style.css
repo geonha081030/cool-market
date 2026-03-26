@@ -13,3 +13,9 @@ input, button {
 #items div, #chat div {
   margin-bottom: 5px;
 }
+
+#items img {
+  max-width: 100px;
+  display: block;
+  margin-bottom: 5px;
+}
