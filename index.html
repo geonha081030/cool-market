@@ -9,6 +9,7 @@
 
 <h1>플리마켓</h1>
 
+<!-- 로그인 / 회원가입 -->
 <div id="auth">
   <input type="email" id="email" placeholder="이메일">
   <input type="password" id="password" placeholder="비밀번호">
@@ -16,15 +17,27 @@
   <button onclick="login()">로그인</button>
 </div>
 
+<!-- 앱 영역 -->
 <div id="app" style="display:none;">
+
+  <!-- 상품 등록 -->
   <h2>상품 등록</h2>
   <input id="title" placeholder="제목">
   <input id="price" placeholder="가격">
-  <button onclick="addItem()">등록</button>
+  <input type="file" id="image">
+  <button onclick="addItemWithImage()">등록</button>
 
+  <!-- 상품 목록 -->
   <h2>상품 목록</h2>
   <div id="items"></div>
 
+  <!-- 채팅 -->
+  <h2>채팅</h2>
+  <div id="chat" style="height:200px; overflow-y:auto; border:1px solid #ccc; padding:5px;"></div>
+  <input type="text" id="messageInput" placeholder="메시지 입력">
+  <button onclick="sendMessage()">보내기</button>
+
+  <br><br>
   <button onclick="logout()">로그아웃</button>
 </div>
 
