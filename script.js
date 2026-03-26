@@ -1,6 +1,3 @@
-// 🔥 이거 뜨면 script.js 정상 실행
-alert("스크립트 실행됨");
-
 // -------------------- Firebase SDK --------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 
@@ -149,17 +146,26 @@ function loadItems() {
   });
 }
 
-// -------------------- 🔥 채팅 + roomId 확인 --------------------
+// -------------------- 채팅 이동 --------------------
 window.startChat = (itemId, sellerId) => {
   const myId = auth.currentUser.uid;
 
   const ids = [myId, sellerId].sort();
   const roomId = itemId + "_" + ids[0] + "_" + ids[1];
 
-  // 🔥 이거 떠야 정상
-  alert("roomId: " + roomId);
-
   window.location.href = `chat.html?roomId=${roomId}`;
+};
+
+// -------------------- 탭 전환 --------------------
+window.showTab = (tab) => {
+  document.getElementById("listTab").style.display = "none";
+  document.getElementById("addTab").style.display = "none";
+
+  if (tab === "list") {
+    document.getElementById("listTab").style.display = "block";
+  } else {
+    document.getElementById("addTab").style.display = "block";
+  }
 };
 
 // -------------------- 유틸 --------------------
