@@ -8,17 +8,14 @@
 
 <h2>상품 목록</h2>
 
-<button id="backBtn">← 메뉴로</button>
+<button onclick="goBack()">← 메뉴로</button>
 <div id="items"></div>
 
 <script type="module" src="script.js"></script>
-
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("backBtn").addEventListener("click", () => {
-      window.location.href = "index.html";
-    });
-  });
+document.addEventListener("DOMContentLoaded", () => {
+  if(document.getElementById("items")) loadItems();
+});
 </script>
 
 </body>
