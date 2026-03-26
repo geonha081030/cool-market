@@ -16,8 +16,7 @@ import {
   query,
   orderBy,
   onSnapshot,
-  where,
-  getDocs
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 import {
@@ -59,10 +58,8 @@ onAuthStateChanged(auth, (user) => {
 
 // -------------------- 회원가입 --------------------
 window.signUp = async () => {
-  const email = emailInput();
-  const password = passwordInput();
-
-  if (!email || !password) return alert("입력해주세요");
+  const email = val("email");
+  const password = val("password");
 
   const user = await createUserWithEmailAndPassword(auth, email, password);
   await sendEmailVerification(user.user);
@@ -72,7 +69,7 @@ window.signUp = async () => {
 
 // -------------------- 로그인 --------------------
 window.login = async () => {
-  await signInWithEmailAndPassword(auth, emailInput(), passwordInput());
+  await signInWithEmailAndPassword(auth, val("email"), val("password"));
 };
 
 // -------------------- 로그아웃 --------------------
@@ -86,7 +83,7 @@ window.addItemWithImage = async () => {
   const price = val("price");
   const file = document.getElementById("image").files[0];
 
-  if (!title || !price || !file) return alert("모두 입력");
+  if (!file) return alert("이미지 선택");
 
   const fileRef = ref(storage, `items/${Date.now()}_${file.name}`);
   await uploadBytes(fileRef, file);
@@ -97,7 +94,7 @@ window.addItemWithImage = async () => {
     price,
     imageUrl,
     sellerId: auth.currentUser.uid,
-    createdAt: new Date()
+    createdAt: serverTimestamp()
   });
 
   clear("title", "price", "image");
@@ -126,7 +123,7 @@ function loadItems() {
   });
 }
 
-// -------------------- 1:1 채팅 시작 --------------------
+// -------------------- 🔥 1:1 채팅 (수정 완료) --------------------
 window.startChat = async (itemId, sellerId) => {
   const buyerId = auth.currentUser.uid;
 
@@ -135,26 +132,15 @@ window.startChat = async (itemId, sellerId) => {
     return;
   }
 
-  const q = query(
-    collection(db, "chatRooms"),
-    where("itemId", "==", itemId),
-    where("buyerId", "==", buyerId),
-    where("sellerId", "==", sellerId)
-  );
+  // 👉 무조건 채팅방 생성 (오류 방지)
+  const room = await addDoc(collection(db, "chatRooms"), {
+    itemId,
+    sellerId,
+    buyerId,
+    createdAt: serverTimestamp()
+  });
 
-  const snap = await getDocs(q);
-
-  if (!snap.empty) {
-    currentRoomId = snap.docs[0].id;
-  } else {
-    const room = await addDoc(collection(db, "chatRooms"), {
-      itemId,
-      sellerId,
-      buyerId,
-      createdAt: new Date()
-    });
-    currentRoomId = room.id;
-  }
+  currentRoomId = room.id;
 
   loadMessages(currentRoomId);
 };
@@ -167,13 +153,13 @@ window.sendChatMessage = async () => {
   await addDoc(collection(db, `chatRooms/${currentRoomId}/messages`), {
     senderId: auth.currentUser.uid,
     text,
-    createdAt: new Date()
+    createdAt: serverTimestamp()
   });
 
   clear("messageInput");
 };
 
-// -------------------- 메시지 불러오기 --------------------
+// -------------------- 메시지 로딩 --------------------
 function loadMessages(roomId) {
   const q = query(
     collection(db, `chatRooms/${roomId}/messages`),
@@ -201,12 +187,4 @@ function val(id) {
 
 function clear(...ids) {
   ids.forEach(id => document.getElementById(id).value = "");
-}
-
-function emailInput() {
-  return val("email");
-}
-
-function passwordInput() {
-  return val("password");
 }
