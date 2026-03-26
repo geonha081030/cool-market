@@ -131,7 +131,6 @@ window.sendChatMessage = async () => {
   if (!text || !currentChatItemId) return;
   const userId = auth.currentUser.uid;
 
-  // 1:1 권한 확인
   if (userId !== currentSellerId && userId !== currentBuyerId) return alert("권한이 없습니다.");
 
   await addDoc(collection(db, `items/${currentChatItemId}/messages`), {
