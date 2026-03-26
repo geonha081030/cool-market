@@ -12,22 +12,36 @@
 <div id="auth">
   <input id="email" placeholder="이메일"><br>
   <input id="password" type="password" placeholder="비밀번호"><br>
-  <button onclick="signUp()">회원가입</button>
-  <button onclick="login()">로그인</button>
+  <button id="signupBtn">회원가입</button>
+  <button id="loginBtn">로그인</button>
 </div>
 
 <!-- 메뉴 -->
 <div id="app" style="display:none;">
-  <button onclick="logout()">로그아웃</button>
+  <button id="logoutBtn">로그아웃</button>
 
   <h3>메뉴</h3>
-
-  <!-- JS 함수 없이 바로 이동 -->
-  <button onclick="location.href='list.html'">상품 목록</button><br><br>
-  <button onclick="location.href='add.html'">상품 등록</button>
+  <button id="listBtn">상품 목록</button>
+  <button id="addBtn">상품 등록</button>
 </div>
 
 <script type="module" src="script.js"></script>
+
+<script>
+  // DOMContentLoaded 후 이벤트 연결
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("signupBtn").addEventListener("click", signUp);
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+
+    document.getElementById("listBtn").addEventListener("click", () => {
+      window.location.href = "list.html";
+    });
+    document.getElementById("addBtn").addEventListener("click", () => {
+      window.location.href = "add.html";
+    });
+  });
+</script>
 
 </body>
 </html>
