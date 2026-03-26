@@ -47,13 +47,21 @@ const storage = getStorage(app);
 
 // -------------------- 로그인 상태 --------------------
 onAuthStateChanged(auth, (user) => {
+  const authDiv = document.getElementById("auth");
+  const appDiv = document.getElementById("app");
+
   if (user && user.emailVerified) {
-    document.getElementById("auth").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    loadItems();
+    if (authDiv) authDiv.style.display = "none";
+    if (appDiv) appDiv.style.display = "block";
+
+    // 🔥 list.html에서만 실행
+    if (document.getElementById("items")) {
+      loadItems();
+    }
+
   } else {
-    document.getElementById("auth").style.display = "block";
-    document.getElementById("app").style.display = "none";
+    if (authDiv) authDiv.style.display = "block";
+    if (appDiv) appDiv.style.display = "none";
   }
 });
 
@@ -82,7 +90,7 @@ window.logout = async () => {
 window.addItemWithImage = async () => {
   const title = val("title");
   const price = val("price");
-  const file = document.getElementById("image").files[0];
+  const file = document.getElementById("image")?.files[0];
 
   if (!title || !price || !file) return alert("모두 입력");
 
@@ -100,6 +108,7 @@ window.addItemWithImage = async () => {
   });
 
   clear("title", "price", "image");
+  alert("등록 완료!");
 };
 
 // -------------------- 거래 완료 --------------------
@@ -116,6 +125,8 @@ function loadItems() {
 
   onSnapshot(q, (snapshot) => {
     const div = document.getElementById("items");
+    if (!div) return;
+
     div.innerHTML = "";
 
     snapshot.forEach(docSnap => {
@@ -156,23 +167,27 @@ window.startChat = (itemId, sellerId) => {
   window.location.href = `chat.html?roomId=${roomId}`;
 };
 
-// -------------------- 탭 전환 --------------------
-window.showTab = (tab) => {
-  document.getElementById("listTab").style.display = "none";
-  document.getElementById("addTab").style.display = "none";
+// -------------------- 페이지 이동 --------------------
+window.goToList = () => {
+  window.location.href = "list.html";
+};
 
-  if (tab === "list") {
-    document.getElementById("listTab").style.display = "block";
-  } else {
-    document.getElementById("addTab").style.display = "block";
-  }
+window.goToAdd = () => {
+  window.location.href = "add.html";
+};
+
+window.goBack = () => {
+  window.location.href = "index.html";
 };
 
 // -------------------- 유틸 --------------------
 function val(id) {
-  return document.getElementById(id).value;
+  return document.getElementById(id)?.value || "";
 }
 
 function clear(...ids) {
-  ids.forEach(id => document.getElementById(id).value = "");
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
 }
