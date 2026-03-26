@@ -25,11 +25,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// URL에서 roomId 가져오기
+// 🔥 URL에서 roomId 가져오기
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get("roomId");
 
-// 로그인 확인 후 실행
+if (!roomId) {
+  alert("채팅방 없음");
+}
+
+// 🔥 로그인 확인 후 메시지 로딩
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     alert("로그인 필요");
@@ -40,7 +44,7 @@ onAuthStateChanged(auth, (user) => {
   loadMessages();
 });
 
-// 메시지 불러오기
+// 🔥 메시지 실시간 로딩 (핵심)
 function loadMessages() {
   const q = query(
     collection(db, `chatRooms/${roomId}/messages`),
@@ -66,7 +70,7 @@ function loadMessages() {
   });
 }
 
-// 메시지 보내기
+// 🔥 메시지 보내기
 window.sendChatMessage = async () => {
   const input = document.getElementById("messageInput");
   const text = input.value;
@@ -80,9 +84,4 @@ window.sendChatMessage = async () => {
   });
 
   input.value = "";
-};
-
-// 뒤로가기
-window.goBack = () => {
-  window.location.href = "index.html";
 };
