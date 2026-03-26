@@ -7,4 +7,9 @@ input, button {
   display: block;
   margin: 10px 0;
   padding: 10px;
+  width: 200px;
+}
+
+#items div, #chat div {
+  margin-bottom: 5px;
 }
