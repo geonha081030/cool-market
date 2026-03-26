@@ -146,24 +146,16 @@ function loadItems() {
   });
 }
 
-// -------------------- 🔥 채팅 페이지 이동 --------------------
-window.startChat = async (itemId, sellerId) => {
+// -------------------- 🔥 채팅 (완전 동기화) --------------------
+window.startChat = (itemId, sellerId) => {
   const myId = auth.currentUser.uid;
 
-  let roomId;
+  // 🔥 무조건 동일한 roomId
+  const ids = [myId, sellerId].sort();
+  const roomId = itemId + "_" + ids[0] + "_" + ids[1];
 
-  if (myId === sellerId) {
-    // 본인 채팅
-    roomId = itemId + "_self_" + myId;
-  } else {
-    // 1:1 채팅
-    const ids = [myId, sellerId].sort();
-    roomId = itemId + "_" + ids[0] + "_" + ids[1];
-  }
+  console.log("roomId:", roomId);
 
-  console.log("이동할 채팅방:", roomId);
-
-  // 🔥 채팅 페이지로 이동
   window.location.href = `chat.html?roomId=${roomId}`;
 };
 
